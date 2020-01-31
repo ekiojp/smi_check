@@ -51,6 +51,10 @@ def main():
         print('[ERROR] Could not connect to {0}:{1}'.format(args.ip, args.port))
         print('[INFO] Either Smart Install feature is Disabled, or Firewall is blocking port {0}'.format(args.port))
         print('[INFO] {0} is not affected'.format(args.ip))
+        if args.file:
+            jsondata = {'device': args.ip, 'vulnerable': 'no'}
+            with open(args.file, 'w') as fd:
+                json.dump(jsondata, fd, indent=4)
         sys.exit()
 
     if conn:
@@ -68,31 +72,48 @@ def main():
                 if (len(data) < 1):
                     print('[INFO] Smart Install Director feature active on {0}:{1}'.format(args.ip, args.port))
                     print('[INFO] {0} is not affected'.format(args.ip))
+                    if args.file:
+                        jsondata = {'device': args.ip, 'vulnerable': 'no'}
+                        with open(args.file, 'w') as fd:
+                            json.dump(jsondata, fd, indent=4)
                     break
                 elif (len(data) == 24):
                     if (binascii.hexlify(data) == str.encode(resp)):
                         print('[INFO] Smart Install Client feature active on {0}:{1}'.format(args.ip, args.port))
                         print('[INFO] {0} is affected'.format(args.ip))
-                        jsondata = {'device': args.ip, 'vulnerable': 'yes'}
-                        with open(args.file, 'w') as fd:
-                            json.dump(jsondata, fd, indent=4)
+                        if args.file:
+                            jsondata = {'device': args.ip, 'vulnerable': 'yes'}
+                            with open(args.file, 'w') as fd:
+                                json.dump(jsondata, fd, indent=4)
                         break
                     else:
                         print(
                         '[ERROR] Unexpected response received, Smart Install Client feature might be active on {0}:{1}'.format(
                             args.ip, args.port))
                         print('[INFO] Unclear whether {0} is affected or not'.format(args.ip))
+                        if args.file:
+                            jsondata = {'device': args.ip, 'vulnerable': 'maybe'}
+                            with open(args.file, 'w') as fd:
+                                json.dump(jsondata, fd, indent=4)
                         break
                 else:
                     print(
                     '[ERROR] Unexpected response received, Smart Install Client feature might be active on {0}:{1}'.format(
                         args.ip, args.port))
                     print('[INFO] Unclear whether {0} is affected or not'.format(args.ip))
+                    if args.file:
+                        jsondata = {'device': args.ip, 'vulnerable': 'maybe'}
+                        with open(args.file, 'w') as fd:
+                            json.dump(jsondata, fd, indent=4)
                     break
 
             except socket.error:
                 print('[ERROR] No response after {0} seconds (default connection timeout)'.format(CONN_TIMEOUT))
                 print('[INFO] Unclear whether {0} is affected or not'.format(args.ip))
+                if args.file:
+                    jsondata = {'device': args.ip, 'vulnerable': 'maybe'}
+                    with open(args.file, 'w') as fd:
+                        json.dump(jsondata, fd, indent=4)
                 break
 
             except KeyboardInterrupt:
