@@ -1,12 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Author: Michael Schueler <mschuele@cisco.com>
 # Based on work by: Jaime Filson <jafilson@cisco.com>
 # Date: 2017-03-17
+# Support Python3 and JSON output (https://github.com/ekiojp/smi_check)
+# Date: 2020-01-31
 
 import sys
 import socket
+import binascii
+import json
 
 halt = False
 
@@ -24,6 +28,7 @@ def setup():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--ip', action='store', dest='ip', required=True, help='IP Address to check')
     parser.add_argument('-p', '--port', action='store', dest='port', type=int, default=4786, help='PORT to check')
+    parser.add_argument('-j', '--json', action='store', dest='file', help='JSON output file')
 
     global args
     args = parser.parse_args()
@@ -54,7 +59,7 @@ def main():
 
         print('[INFO] Sending TCP probe to {0}:{1}'.format(args.ip, args.port))
 
-        conn.send(req.decode('hex'))
+        conn.send(binascii.unhexlify(req))
 
         while True:
             try:
@@ -65,9 +70,12 @@ def main():
                     print('[INFO] {0} is not affected'.format(args.ip))
                     break
                 elif (len(data) == 24):
-                    if (data.encode('hex') == resp):
+                    if (binascii.hexlify(data) == str.encode(resp)):
                         print('[INFO] Smart Install Client feature active on {0}:{1}'.format(args.ip, args.port))
                         print('[INFO] {0} is affected'.format(args.ip))
+                        jsondata = {'device': args.ip, 'vulnerable': 'yes'}
+                        with open(args.file, 'w') as fd:
+                            json.dump(jsondata, fd, indent=4)
                         break
                     else:
                         print(
